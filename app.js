@@ -38,6 +38,7 @@ const count = document.querySelector("#count");
 
 let applications = [];
 let selectedApplicationId = null;
+
 async function checkAdmin() {
   const {
     data: { user },
@@ -176,9 +177,19 @@ async function openApplication(applicationId) {
         </p>
       </div>
 
-      <span class="badge">
-        ${escapeHtml(formatStatus(application.status))}
-      </span>
+      <div class="detail-actions">
+        <span class="badge">
+          ${escapeHtml(formatStatus(application.status))}
+        </span>
+
+        <button
+          class="button danger"
+          type="button"
+          id="deleteApplicationButton"
+        >
+          Delete Application
+        </button>
+      </div>
     </div>
 
     <div class="messages">
@@ -219,6 +230,54 @@ async function openApplication(applicationId) {
   document
     .querySelector("#adminReplyForm")
     .addEventListener("submit", sendAdminReply);
+
+  document
+    .querySelector("#deleteApplicationButton")
+    .addEventListener("click", deleteApplication);
+}
+
+async function deleteApplication() {
+  const application = applications.find(
+    (item) => item.id === selectedApplicationId,
+  );
+
+  if (!application) {
+    return;
+  }
+
+  const confirmed = window.confirm(
+    `Delete application ${application.application_number} permanently?\\n\\nThis will also delete its entire conversation. This action cannot be undone.`,
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  const button = document.querySelector("#deleteApplicationButton");
+
+  button.disabled = true;
+  button.textContent = "Deleting...";
+
+  const { error } = await supabase
+    .from("applications")
+    .delete()
+    .eq("id", application.id);
+
+  if (error) {
+    button.disabled = false;
+    button.textContent = "Delete Application";
+    window.alert(`Unable to delete application: ${error.message}`);
+    return;
+  }
+
+  selectedApplicationId = null;
+  detail.innerHTML = `
+    <div class="empty">
+      Application deleted successfully.
+    </div>
+  `;
+
+  await loadApplications();
 }
 
 async function sendAdminReply(event) {
