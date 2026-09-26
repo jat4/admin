@@ -98,6 +98,18 @@ textarea:focus {
   color: #26344d;
 }
 
+.danger {
+  background: #b4232f;
+  color: #fff;
+}
+
+.detail-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .status {
   min-height: 22px;
   font-size: 13px;
