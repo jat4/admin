@@ -28,7 +28,16 @@ const formatStatus = (value) =>
     .replace(/_/g, " ")
     .replace(/^customer reply$/i, "applicant reply");
 
-const loginView =document.querySelector("#loginView"),dash=document.querySelector("#dashboardView"),loginForm=document.querySelector("#loginForm"),loginStatus=document.querySelector("#loginStatus"),list=document.querySelector("#applicationList"),detail=document.querySelector("#detail"),count=document.querySelector("#count");let apps=[],selectedId=null;
+const loginView = document.querySelector("#loginView");
+const dashboard = document.querySelector("#dashboardView");
+const loginForm = document.querySelector("#loginForm");
+const loginStatus = document.querySelector("#loginStatus");
+const applicationList = document.querySelector("#applicationList");
+const detail = document.querySelector("#detail");
+const count = document.querySelector("#count");
+
+let applications = [];
+let selectedApplicationId = null;
 async function checkAdmin() {
   const {
     data: { user },
@@ -57,7 +66,15 @@ async function checkAdmin() {
   await loadApplications();
 }
 
-function showLogin(){loginView.classList.remove("hidden");dash.classList.add("hidden")}function showDash(){loginView.classList.add("hidden");dash.classList.remove("hidden")}
+function showLogin() {
+  loginView.classList.remove("hidden");
+  dashboard.classList.add("hidden");
+}
+
+function showDashboard() {
+  loginView.classList.add("hidden");
+  dashboard.classList.remove("hidden");
+}
 async function loadApplications() {
   const { data, error } = await supabase
     .from("applications")
@@ -241,8 +258,42 @@ async function sendAdminReply(event) {
   button.disabled = false;
 }
 
-loginForm.addEventListener("submit",async e=>{e.preventDefault();const b=document.querySelector("#loginButton");b.disabled=true;loginStatus.className="status";loginStatus.textContent="Signing in...";const form=new FormData(loginForm);const {error}=await supabase.auth.signInWithPassword({email:form.get("email"),password:form.get("password")});if(error){loginStatus.className="status error";loginStatus.textContent=error.message}else{loginForm.reset();await checkAdmin()}b.disabled=false});
-document.querySelector("#logoutButton").addEventListener("click",async()=>{await supabase.auth.signOut({scope:"local"});showLogin()});supabase.auth.onAuthStateChange(()=>checkAdmin());checkAdmin();
+loginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const button = document.querySelector("#loginButton");
+
+  button.disabled = true;
+  loginStatus.className = "status";
+  loginStatus.textContent = "Signing in...";
+
+  const form = new FormData(loginForm);
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: form.get("email"),
+    password: form.get("password"),
+  });
+
+  if (error) {
+    loginStatus.className = "status error";
+    loginStatus.textContent = error.message;
+  } else {
+    loginForm.reset();
+    await checkAdmin();
+  }
+
+  button.disabled = false;
+});
+
+document.querySelector("#logoutButton").addEventListener("click", async () => {
+  await supabase.auth.signOut({ scope: "local" });
+  showLogin();
+});
+
+supabase.auth.onAuthStateChange(() => checkAdmin());
+
+checkAdmin();
+
 supabase
   .channel("admin-inbox")
   .on(
