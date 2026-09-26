@@ -155,10 +155,7 @@ async function ensureRealtimeChannel() {
   adminChannel = supabase
     .channel("admin-inbox")
     .on("postgres_changes", { event: "*", schema: "public", table: "applications" }, scheduleRealtimeRefresh)
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-      if (payload.new && payload.new.application_id === selectedApplicationId && selectedApplication) {
-        refreshSelectedConversation(selectedApplication);
-      }
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => {
       scheduleRealtimeRefresh();
     })
     .subscribe((status, error) => {
@@ -273,13 +270,6 @@ async function loadApplications({ resetPage = false } = {}) {
     totalApplicationCount = result.total;
     renderApplicationList();
 
-    if (selectedApplicationId) {
-      const selectedOnPage = applications.find((item) => item.id === selectedApplicationId);
-      if (selectedOnPage) {
-        selectedApplication = selectedOnPage;
-        await refreshSelectedConversation(selectedOnPage);
-      }
-    }
   } catch (error) {
     if (requestId !== loadSequence) return;
     detail.innerHTML = '<div class="status error">Unable to load applications: ' + escapeHtml(error.message) + '</div>';
